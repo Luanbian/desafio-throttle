@@ -13,8 +13,29 @@ const load = delays.map(
 type Task = () => Promise<number>;
 
 const throttle = async (workers: number, tasks: Task[]) => {
-    console.log(workers);
-    console.log(tasks);
+    const queue: Task[] = [...tasks];
+    let runningTasks: Promise<number>[] = [];
+
+    const executeNextTask = async () => {
+        if (queue.length > 0 && runningTasks.length < workers) {
+            const nextTask = queue.shift();
+            if (nextTask) {
+                const taskPromise = nextTask();
+                runningTasks.push(taskPromise);
+                taskPromise.finally(() => {
+                    runningTasks = runningTasks.filter((task) => task !== taskPromise);
+                    executeNextTask();
+                });
+                Promise.resolve();
+            }
+        }
+    };
+
+    for (let i = 0; i < workers; i += 1) {
+        executeNextTask();
+    }
+    await Promise.all(runningTasks);
+    return Promise.all(tasks.map((task) => task()));
 };
 
 const bootstrap = async () => {

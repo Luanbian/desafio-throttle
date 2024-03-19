@@ -14,27 +14,26 @@ type Task = () => Promise<number>;
 
 const throttle = async (workers: number, tasks: Task[]) => {
     const queue: Task[] = [...tasks];
-    let runningTasks: Promise<number>[] = [];
+    let runningCount = 0;
 
     const executeNextTask = async () => {
-        if (queue.length > 0 && runningTasks.length < workers) {
+        if (queue.length > 0 && runningCount < workers) {
+            runningCount += 1;
             const nextTask = queue.shift();
             if (nextTask) {
-                const taskPromise = nextTask();
-                runningTasks.push(taskPromise);
-                taskPromise.finally(() => {
-                    runningTasks = runningTasks.filter((task) => task !== taskPromise);
-                    executeNextTask();
-                });
-                Promise.resolve();
+                await nextTask();
+                runningCount -= 1;
+                executeNextTask();
             }
         }
     };
 
+    const promises: Promise<void>[] = [];
     for (let i = 0; i < workers; i += 1) {
-        executeNextTask();
+        promises.push(executeNextTask());
     }
-    await Promise.all(runningTasks);
+
+    await Promise.all(promises);
     return Promise.all(tasks.map((task) => task()));
 };
 

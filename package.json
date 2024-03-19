@@ -4,7 +4,7 @@
     "description": "sistema de throttle de execucao de funcoes assincronas",
     "main": "index.js",
     "scripts": {
-        "test": "jest --passWithNoTests --watch --silent --runInBand",
+        "test": "jest --passWithNoTests --silent --runInBand",
         "dev": "ts-node-dev src/index.ts",
         "lint": "eslint src --ext .ts --no-error-on-unmatched-pattern",
         "prepare": "husky"

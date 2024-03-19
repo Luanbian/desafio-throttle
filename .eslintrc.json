@@ -13,6 +13,7 @@
         "import/prefer-default-export": "off",
         "no-console": "off",
         "linebreak-style": ["error", "windows"],
-        "indent": ["error", 4]
+        "indent": ["error", 4],
+        "import/no-unresolved": "off"
     }
 }

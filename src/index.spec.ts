@@ -13,7 +13,31 @@ const taskMock = [
     jest.fn(() => Promise.resolve(10)),
 ];
 
+const generateTaskWithDelay = (delay: number): () =>
+  Promise<number> => () => new Promise((resolve) => {
+    setTimeout(() => resolve(Math.floor(delay / 100)), delay);
+});
+
 describe('bootstrap function', () => {
+    test('should generate tasks with delays within the expected range', async () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        const delays: number[] = [];
+        const tasks = Array.from({ length: 50 }, (_, index) => index * 100 + 100).map((delay) => {
+            delays.push(delay);
+            return generateTaskWithDelay(delay);
+        });
+
+        const results = await throttle(5, tasks);
+
+        expect(delays.length).toBe(50);
+        delays.forEach((delay, index) => {
+            expect(delay).toBeGreaterThanOrEqual(100);
+            expect(results[index]).toBe(Math.floor(delay / 100));
+        });
+
+        jest.restoreAllMocks();
+    }, 10000);
     test('should throttle tasks to a specified number of workers', async () => {
         await throttle(1, taskMock);
 

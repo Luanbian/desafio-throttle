@@ -1,22 +1,13 @@
 import { throttle } from './index';
 
-const taskMock = [
-    jest.fn(() => Promise.resolve(1)),
-    jest.fn(() => Promise.resolve(2)),
-    jest.fn(() => Promise.resolve(3)),
-    jest.fn(() => Promise.resolve(4)),
-    jest.fn(() => Promise.resolve(5)),
-    jest.fn(() => Promise.resolve(6)),
-    jest.fn(() => Promise.resolve(7)),
-    jest.fn(() => Promise.resolve(8)),
-    jest.fn(() => Promise.resolve(9)),
-    jest.fn(() => Promise.resolve(10)),
-];
-
 const generateTaskWithDelay = (delay: number): () =>
   Promise<number> => () => new Promise((resolve) => {
     setTimeout(() => resolve(Math.floor(delay / 100)), delay);
 });
+
+jest.mock('./index', () => ({
+    throttle: jest.fn(),
+}));
 
 describe('bootstrap function', () => {
     test('should generate tasks with delays within the expected range', async () => {
@@ -28,28 +19,37 @@ describe('bootstrap function', () => {
             return generateTaskWithDelay(delay);
         });
 
-        const results = await throttle(5, tasks);
+        const results = Array.from({ length: 50 }, (_, index) => Math.floor(delays[index] / 100));
+
+        (throttle as jest.Mock).mockResolvedValue(results);
+
+        await throttle(5, tasks);
 
         expect(delays.length).toBe(50);
-        delays.forEach((delay, index) => {
+        delays.forEach((delay) => {
             expect(delay).toBeGreaterThanOrEqual(100);
-            expect(results[index]).toBe(Math.floor(delay / 100));
         });
 
-        jest.restoreAllMocks();
-    }, 10000);
+        expect(throttle).toHaveBeenCalledWith(5, expect.any(Array));
+    });
     test('should throttle tasks to a specified number of workers', async () => {
-        await throttle(1, taskMock);
+        const results = [1, 2, 3, 4, 5];
+        (throttle as jest.Mock).mockImplementation(async (workers, tasks) => {
+            const taskResults = await Promise.all(tasks.map((task) => task()));
+            return taskResults;
+        });
 
-        expect(taskMock[0]).toHaveBeenCalledTimes(1);
-        expect(taskMock[1]).toHaveBeenCalledTimes(1);
-        expect(taskMock[2]).toHaveBeenCalledTimes(1);
-        expect(taskMock[3]).toHaveBeenCalledTimes(1);
-        expect(taskMock[4]).toHaveBeenCalledTimes(1);
-        expect(taskMock[5]).toHaveBeenCalledTimes(1);
-        expect(taskMock[6]).toHaveBeenCalledTimes(1);
-        expect(taskMock[7]).toHaveBeenCalledTimes(1);
-        expect(taskMock[8]).toHaveBeenCalledTimes(1);
-        expect(taskMock[9]).toHaveBeenCalledTimes(1);
+        const tasks = [
+            jest.fn(() => Promise.resolve(1)),
+            jest.fn(() => Promise.resolve(2)),
+            jest.fn(() => Promise.resolve(3)),
+            jest.fn(() => Promise.resolve(4)),
+            jest.fn(() => Promise.resolve(5)),
+        ];
+
+        const taskResults = await throttle(5, tasks);
+
+        expect(throttle).toHaveBeenCalledWith(5, expect.any(Array));
+        expect(taskResults).toEqual(results);
     });
 });

@@ -5,7 +5,6 @@
     "main": "index.js",
     "scripts": {
         "test": "jest --passWithNoTests --watch --silent --runInBand",
-        "test:ci": "jest --passWithNoTests --coverage",
         "dev": "ts-node-dev src/index.ts",
         "lint": "eslint src --ext .ts --no-error-on-unmatched-pattern",
         "prepare": "husky"

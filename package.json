@@ -4,6 +4,7 @@
     "description": "sistema de throttle de execucao de funcoes assincronas",
     "main": "index.js",
     "scripts": {
+        "dev": "ts-node-dev src/index.ts",
         "test": "echo \"Error: no test specified\" && exit 1",
         "lint": "eslint src --ext .ts --no-error-on-unmatched-pattern",
         "prepare": "husky"

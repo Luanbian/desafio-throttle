@@ -12,32 +12,24 @@ const load = delays.map(
 
 type Task = () => Promise<number>;
 
-const throttle = async (workers: number, tasks: Task[]) => {
-    const queue: Task[] = [...tasks];
-    let runningCount = 0;
+export const throttle = async (workers: number, tasks: Task[]): Promise<number[]> => {
+    const results: number[] = [];
 
-    const executeNextTask = async () => {
-        if (queue.length > 0 && runningCount < workers) {
-            runningCount += 1;
-            const nextTask = queue.shift();
-            if (nextTask) {
-                await nextTask();
-                runningCount -= 1;
-                executeNextTask();
-            }
-        }
+    const processBatch = async (batch: Task[]) => {
+        const batchResults = await Promise.all(batch.map((task) => task()));
+        results.push(...batchResults);
     };
 
-    const promises: Promise<void>[] = [];
-    for (let i = 0; i < workers; i += 1) {
-        promises.push(executeNextTask());
+    const batches: Task[][] = [];
+    for (let i = 0; i < tasks.length; i += workers) {
+        batches.push(tasks.slice(i, i + workers));
     }
 
-    await Promise.all(promises);
-    return Promise.all(tasks.map((task) => task()));
+    await Promise.all(batches.map((batch) => processBatch(batch)));
+    return results;
 };
 
-const bootstrap = async () => {
+export const bootstrap = async () => {
     logger('Starting...');
     const start = Date.now();
     const answers = await throttle(5, load);
